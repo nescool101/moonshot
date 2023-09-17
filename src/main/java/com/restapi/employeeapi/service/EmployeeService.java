@@ -3,12 +3,10 @@ package com.restapi.employeeapi.service;
 import com.restapi.employeeapi.dto.Add;
 import com.restapi.employeeapi.dto.EmployeeDTO;
 import com.restapi.employeeapi.entity.Employee;
-import com.restapi.employeeapi.exception.EmployeeNotFoundException;
 import com.restapi.employeeapi.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.restapi.employeeapi.dto.Result;
 import java.util.List;
 
 @Service
@@ -16,9 +14,6 @@ public class EmployeeService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
-
-    @Autowired
-    private EmployeeService employeeService;
 
     @Autowired
     private SoapClient soapClient;
@@ -31,16 +26,18 @@ public class EmployeeService {
         return employeeRepository.findById(id).orElse(null);
     }
 
-    public Employee save(EmployeeDTO savedEmployeeDTO) {
+    public Employee save(EmployeeDTO employeeDTO) {
+        Add add =new Add();
+        var bonus = 1000;
+        add.setArg0(1);
+        add.setArg1(bonus);
+        int returnedInt = soapClient.add(add);
 
-
-        // TODO Creating SOAP request object
-        Add soapRequest = new Add();
-        // Set the necessary fields of soapRequest object based on savedEmployeeDTO
-
-        // TODO Calling the SOAP service
-        Result soapResponse = soapClient.callSoapService(soapRequest);
-        Employee employee = employeeService.save(savedEmployeeDTO);
+        var employee= new Employee();
+        employee.setId(employeeDTO.getId());
+        employee.setPosition(employeeDTO.getPosition());
+        employee.setName(employeeDTO.getName());
+        employee.setSalary(Double.valueOf(returnedInt));
         return employeeRepository.save(employee);
     }
 
