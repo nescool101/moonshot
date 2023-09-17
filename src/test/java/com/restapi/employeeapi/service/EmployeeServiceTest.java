@@ -1,124 +1,128 @@
 package com.restapi.employeeapi.service;
 
-/*
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.restapi.employeeapi.exception.CategoryNotFoundException;
+
+import com.restapi.employeeapi.dto.Add;
+import com.restapi.employeeapi.dto.EmployeeDTO;
+import com.restapi.employeeapi.entity.Employee;
+import com.restapi.employeeapi.repository.EmployeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.AssertionErrors.*;
-@WebMvcTest(CategoryServiceTest.class)
-class CategoryServiceTest {
-
-
-    @Mock
-    List<CategoryDTO> categoryDTOMock;
+@ExtendWith(MockitoExtension.class)
+class EmployeeServiceTest {
 
     @InjectMocks
-    private CategoryService categoryService;
+    private EmployeeService employeeService;
 
     @Mock
-    CategoryRepository categoryRepository;
+    private EmployeeRepository employeeRepository;
 
     @Mock
-    KeywordRepository keywordRepository;
+    private SoapClient soapClient;
 
-
-    Category category = new Category();
-
-    Category category1 = new Category();
 
     @BeforeEach
     public void setup(){
 
 
-        CategoryDTO categoryParent = CategoryDTO.builder()
-                .categoryId(1L)
-                .keyword("Applience")
-                .name("Garden")
-                .subcategories(null)
-                .hierarchyLevel(1L)
-                .build();
+        Employee employeeSenior = getEmployeeSenior();
+        employeeSenior.setSalary(1000.0);
 
-        CategoryDTO categorySon = CategoryDTO.builder()
-                .categoryId(1L)
-                .keyword("Applience")
-                .name("Garden")
-                .subcategories(null)
-                .hierarchyLevel(2L)
-                .build();
+        var employeeSeniorDto= new EmployeeDTO();
+        employeeSeniorDto.setId(1L);
+        employeeSeniorDto.setPosition("javita");
+        employeeSeniorDto.setName("nescao");
+        employeeSeniorDto.setSalary(1000.0);
 
-        category = new Category().builder()
-                .categoryId(1L)
-                .name("name")
-                .build();
-
-        category1 = new Category().builder()
-                .categoryId(2L)
-                .name("name 2")
-                .build();
-
+        var employeeJuniorDto= new EmployeeDTO();
+        employeeJuniorDto.setId(2L);
+        employeeJuniorDto.setPosition("javita2");
+        employeeJuniorDto.setName("nescao2");
+        employeeJuniorDto.setSalary(100.0);
     }
+
     @Test
     void listAll() {
 
-        categoryService.listAll();
+        Employee employeeSenior = getEmployeeSenior();
+        employeeSenior.setSalary(1000.0);
+
+        var employeeList= List.of(employeeSenior);
+
+        when(employeeRepository.findAll()).thenReturn(employeeList);
+        var values = employeeService.findAll();
+
+        assertNotNull("failed assertion assertNotNull",values.get(0).getName());
+        assertEquals("failed assertion","nescao", values.get(0).getName());
     }
 
     @Test
-    void findByIdOK() throws CategoryNotFoundException, JsonProcessingException {
-        Keyword keyword = new Keyword();
-        keyword.setKeywords("Lawn2, Garden2, GardeningTools2");
-        when(categoryRepository.findByCategory(1L)).thenReturn(Optional.of(category));
-       // when(keywordRepository.findByCategoryId(1L)).thenReturn(keyword);
+    void findByIdOK() {
+        Employee employeeSenior = getEmployeeSenior();
+        employeeSenior.setSalary(1000.0);
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employeeSenior));
 
-        ObjectMapper mapper = new ObjectMapper();
+        Employee values = employeeService.findById(1L);
 
-        String values = categoryService.findById(1L);
-
-        assertNotNull("",values);
-        assertEquals("",values, "Lawn2, Garden2, GardeningTools2");
-    }
-
-    @Test
-    void findByIdForFailedPath() throws CategoryNotFoundException, JsonProcessingException {
-        when(categoryRepository.findByCategory(1L)).thenReturn(Optional.of(category));
-        //when(keywordRepository.findByCategoryId(1L)).thenReturn(null);
-
-        ObjectMapper mapper = new ObjectMapper();
-
-        String values = categoryService.findById(1L);
-
-        assertNotNull("",values);
-        assertEquals("",values, "Lawn, Garden, GardeningTools");
+        assertNotNull("failed assertion assertNotNull",values.getName());
+        assertEquals("failed assertion","nescao", values.getName());
     }
 
 
     @Test
-    void findByLevel1() throws CategoryNotFoundException {
-        Keyword keyword = new Keyword();
-        keyword.setKeywords("Lawn2, Garden2, GardeningTools2");
-      //  when(keywordRepository.findByCategoryId(1L)).thenReturn(keyword);
-        ObjectMapper mapper = new ObjectMapper();
-        Long level = categoryService.findByLevel(1L);
-        assertEquals("",1L, level);
+    void testSave() {
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        employeeDTO.setId(1L);
+        employeeDTO.setName("Test Name");
+        employeeDTO.setPosition("Test Position");
+        employeeDTO.setSalary(1000.0);
+
+        Add addResponse = new Add();
+        addResponse.setArg0(1);
+        addResponse.setArg1(1000);
+
+        when(soapClient.add(any(Add.class))).thenReturn(1);
+
+        Employee employee = new Employee();
+        employee.setId(employeeDTO.getId());
+        employee.setName(employeeDTO.getName());
+        employee.setPosition(employeeDTO.getPosition());
+        employee.setSalary(employeeDTO.getSalary());
+        when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
+
+        Employee savedEmployee = employeeService.save(employeeDTO);
+
+        assertEquals("getId",employeeDTO.getId(), savedEmployee.getId());
+        assertEquals("getName",employeeDTO.getName(), savedEmployee.getName());
+        assertEquals("getPosition",employeeDTO.getPosition(), savedEmployee.getPosition());
+        assertEquals("getSalary",employeeDTO.getSalary(), savedEmployee.getSalary());
     }
+
     @Test
-    void findByLevel2() throws CategoryNotFoundException {
-       // when(keywordRepository.findByCategoryId(1L)).thenReturn(null);
-        ObjectMapper mapper = new ObjectMapper();
-        Long level = categoryService.findByLevel(1L);
-        assertEquals("",2L, level);
+    void testDeleteById() {
+        Long id = 1L;
+        employeeService.deleteById(id);
+        verify(employeeRepository).deleteById(id);
     }
+
+
+    private static Employee getEmployeeSenior() {
+        var employeeSenior= new Employee();
+        employeeSenior.setId(1L);
+        employeeSenior.setPosition("javita");
+        employeeSenior.setName("nescao");
+        return employeeSenior;
+    }
+
 }
-
- */
