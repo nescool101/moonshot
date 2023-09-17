@@ -1,5 +1,6 @@
 package com.restapi.employeeapi.controller;
 
+import com.restapi.employeeapi.dto.EmployeeDTO;
 import com.restapi.employeeapi.entity.Employee;
 import com.restapi.employeeapi.exception.EmployeeNotFoundException;
 import com.restapi.employeeapi.service.EmployeeService;
@@ -26,8 +27,8 @@ public class EmployeeController {
 	}
 
 	@PostMapping
-	public Employee save(@RequestBody Employee employee) {
-		return employeeService.save(employee);
+	public Employee save(@RequestBody EmployeeDTO employeeDTO) {
+		return employeeService.save(employeeDTO);
 	}
 
 	@DeleteMapping("/{id}")
